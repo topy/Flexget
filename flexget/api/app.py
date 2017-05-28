@@ -20,8 +20,6 @@ from flexget.webserver import User
 from jsonschema import RefResolutionError
 from werkzeug.http import generate_etag
 
-from .v2.plugins.history import schema
-
 from . import __path__
 
 __version__ = '1.1.2'
