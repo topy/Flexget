@@ -11,14 +11,18 @@ from functools import wraps
 from flask import Flask, request, jsonify, make_response
 from flask_compress import Compress
 from flask_cors import CORS
+from flask_graphql.graphqlview import GraphQLView
 from flask_restplus import Model, Api as RestPlusAPI
 from flask_restplus import Resource
 from flexget import manager
 from flexget.config_schema import process_config
+from flexget.manager import Session
 from flexget.utils.database import with_session
 from flexget.webserver import User
 from jsonschema import RefResolutionError
 from werkzeug.http import generate_etag
+
+from .v2.plugins.history import schema
 
 from . import __path__
 
@@ -235,6 +239,10 @@ api_app.url_map.strict_slashes = False
 
 CORS(api_app, expose_headers='Link, Total-Count, Count, ETag')
 Compress(api_app)
+
+v2_app = Flask(__name__)
+v2_app.add_url_rule('/', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True,
+                                                       context={'session': Session()}))
 
 api = API(
     api_app,
