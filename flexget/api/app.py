@@ -240,9 +240,9 @@ api_app.url_map.strict_slashes = False
 CORS(api_app, expose_headers='Link, Total-Count, Count, ETag')
 Compress(api_app)
 
-v2_app = Flask(__name__)
-v2_app.add_url_rule('/', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True,
-                                                       context={'session': Session()}))
+# v2_app = Flask(__name__)
+# v2_app.add_url_rule('/', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True,
+#                                                        context={'session': Session}))
 
 api = API(
     api_app,
