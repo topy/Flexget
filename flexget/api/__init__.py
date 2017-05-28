@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, division, absolute_import  # noqa
 # noqa
-from .v2 import v2_app
+from .v2.app import v2_app
 from .app import api_app, api, APIResource, APIClient  # noqa
 from .core import authentication, cached, database, plugins, server, tasks, user, format_checker  # noqa
 from .plugins import entry_list, failed, history, imdb_lookup, movie_list, rejected, schedule, variables, seen  # noqa
