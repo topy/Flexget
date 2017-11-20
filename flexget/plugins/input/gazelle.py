@@ -58,6 +58,7 @@ class InputGazelle(object):
                 'base_url': {'type': 'string'},
                 'username': {'type': 'string'},
                 'password': {'type': 'string'},
+                'max_pages': {'type': 'integer'},
                 'user_agent': {'type': 'string'},
                 'search': {'type': 'string'},
             },
@@ -109,6 +110,9 @@ class InputGazelle(object):
 
         if not self.base_url:
             raise PluginError("No 'base_url' configured")
+
+        # Any more than 5 pages is probably way too loose of a search
+        self.max_pages = config.get('max_pages', 5)
 
         # The consistent request limiting rule seems to be:
         # "Refrain from making more than five (5) requests every ten (10) seconds"
@@ -231,7 +235,7 @@ class InputGazelle(object):
         """Generator that yields search results"""
         page = 1
         pages = None
-        while True:
+        while page <= self.max_pages:
             if pages and page >= pages:
                 break
 
@@ -244,6 +248,10 @@ class InputGazelle(object):
 
             pages = result.get('pages', pages)
             page += 1
+
+        if page > self.max_pages:
+            log.warning("Stopped after %d pages (out of %d total pages)",
+                        self.max_pages, pages)
 
     def get_entries(self, search_results):
         """Generator that yields Entry objects from search results"""
@@ -379,6 +387,7 @@ class InputRedacted(InputGazelle):
                 'base_url': {'type': 'string'},
                 'username': {'type': 'string'},
                 'password': {'type': 'string'},
+                'max_pages': {'type': 'integer'},
                 'user_agent': {'type': 'string'},
                 'search': {'type': 'string'},
                 'artist': {'type': 'string'},
