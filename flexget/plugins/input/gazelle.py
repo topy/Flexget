@@ -120,8 +120,7 @@ class InputGazelle(object):
 
         # Custom user agent
         user_agent = config.get('user_agent', "Flexget [Gazelle plugin]")
-        if user_agent:
-            self._session.headers.update({"User-Agent": user_agent})
+        self._session.headers.update({"User-Agent": user_agent})
         self.username = config['username']
         self.password = config['password']
 
@@ -147,8 +146,7 @@ class InputGazelle(object):
                     GazelleSession.base_url == self.base_url,
                     GazelleSession.username == self.username
                 ).one_or_none()
-                if (db_session and db_session.expires and
-                        db_session.expires >= datetime.utcnow()):
+                if db_session and db_session.expires and db_session.expires >= datetime.utcnow():
                     # Found a valid session in the DB - use it
                     self._session.cookies.update(db_session.cookies)
                     self.authkey = db_session.authkey
@@ -163,11 +161,11 @@ class InputGazelle(object):
             'password': self.password,
             'keeplogged': 1,
         }
-        r = self._session.post(url, data=data, allow_redirects=False)
+        r = self._session.post(url, data=data, allow_redirects=False, raise_status=True)
         if not r.is_redirect or r.next.url != "{}/index.php".format(self.base_url):
             msg = "Failed to log into {}".format(self.base_url)
-            for x in DETECT_2FA:
-                if x in r.text:
+            for otp_text in DETECT_2FA:
+                if otp_text in r.text:
                     msg += " - Accounts using 2FA are currently not supported"
                     break
             raise PluginError(msg)
@@ -204,16 +202,14 @@ class InputGazelle(object):
             raise ValueError("An 'action' is required when making a request")
 
         ajaxpage = "{}/ajax.php".format(self.base_url)
-        r = self._session.get(ajaxpage, params=params, allow_redirects=False)
-        if (not no_login and r.is_redirect and
-                r.next.url == "{}/login.php".format(self.base_url)):
+        r = self._session.get(ajaxpage, params=params, allow_redirects=False, raise_status=True)
+        if not no_login and r.is_redirect and r.next.url == "{}/login.php".format(self.base_url):
             log.warning("Redirected to login page, reauthenticating and trying again")
             self.authenticate(force=True)
             return self.request(no_login=True, **params)
 
         if r.status_code != 200:
-            raise PluginError("{} returned a non-200 status code"
-                              "".format(self.base_url))
+            raise PluginError("{} returned a non-200 status code".format(self.base_url))
 
         try:
             json_response = r.json()
@@ -224,12 +220,10 @@ class InputGazelle(object):
                 if not error or error == "failure":
                     error = json_response.get('response', str(json_response))
 
-                raise PluginError("{} gave a failure response of '{}'"
-                                  "".format(self.base_url, error))
+                raise PluginError("{} gave a failure response of '{}'".format(self.base_url, error))
             return json_response['response']
         except (ValueError, TypeError, KeyError):
-            raise PluginError("{} returned an invalid response"
-                              "".format(self.base_url))
+            raise PluginError("{} returned an invalid response".format(self.base_url))
 
     def search_results(self, params):
         """Generator that yields search results"""
@@ -267,8 +261,7 @@ class InputGazelle(object):
 
                 yield Entry(
                     title="{groupName} ({groupId} - {torrentId}).torrent".format(**temp),
-                    url="{}/torrents.php?action=download&"
-                        "id={}&authkey={}&torrent_pass={}"
+                    url="{}/torrents.php?action=download&id={}&authkey={}&torrent_pass={}"
                         "".format(self.base_url, temp['torrentId'], self.authkey, self.passkey),
                     torrent_seeds=tor['seeders'],
                     torrent_leeches=tor['leechers'],
@@ -378,7 +371,7 @@ class InputRedacted(InputGazelle):
 
     def __init__(self):
         """Init client and set up the schema"""
-        super().__init__()
+        super(InputRedacted, self).__init__()
 
         self.base_url = "https://redacted.ch"
         self.schema = {
@@ -457,7 +450,7 @@ class InputNotWhat(InputRedacted):
             "missing sample rate": -8,
             "missing description": -9
         }
-        super().__init__()
+        super(InputNotWhat, self).__init__()
         self.base_url = "https://notwhat.cd"
 
 
